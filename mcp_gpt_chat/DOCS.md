@@ -1,5 +1,10 @@
 # MCP-AI-Chat — Documentation
 
+## Oberfläche
+
+![MCP-AI-Chat Oberfläche](https://raw.githubusercontent.com/Psyco1989/mcp_gpt_chat/refs/heads/main/Screenshot.png)
+
+
 ## Installation
 
 Install **MCP-AI-Chat** through a Home Assistant app repository or build it locally for development.
