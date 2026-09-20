@@ -2,7 +2,7 @@ name: MCP-GPT-Chat
 version: "3.4.2"
 slug: mcp-gpt-chat
 description: ChatGPT-Weboberfläche mit OpenAI Responses API und Home Assistant MCP
-url: "https://platform.openai.com/docs"
+url: "https://github.com/Psyco1989/mcp_gpt_chat"
 
 startup: application
 boot: auto
