@@ -1,5 +1,5 @@
-name: MCP-GPT-Chat
-version: "1.0.0"
+name: MCP-AI-Chat
+version: "1.0.1"
 slug: mcp-gpt-chat
 description: ChatGPT-Weboberfläche mit OpenAI Responses API und Home Assistant MCP
 url: "https://github.com/Psyco1989/mcp_gpt_chat"
@@ -15,7 +15,7 @@ arch:
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:chat-processing-outline
-panel_title: MCP-GPT-Chat
+panel_title: MCP-AI-Chat
 
 options:
   openai_api_key: ""
