@@ -51,15 +51,7 @@ options:
     Berücksichtige den bisherigen Gesprächsverlauf und wichtige Informationen aus früheren Gesprächen.
     
 schema:
-  provider:
-    selector:
-      select:
-        options:
-          - label: OpenAI
-            value: openai
-          - label: Anthropic / Claude
-            value: anthropic
-
+  provider: list(openai|anthropic)
   openai_api_key: password
   openai_model: str
 
