@@ -4,6 +4,10 @@ A Home Assistant app that provides a web-based AI chat interface with Home Assis
 
 The app supports multiple AI providers and allows you to switch between them directly in the Home Assistant app configuration.
 
+## Oberfläche
+
+![MCP-AI-Chat Oberfläche](https://raw.githubusercontent.com/Psyco1989/mcp_gpt_chat/refs/heads/main/Screenshot.png)
+
 ## Features
 
 - OpenAI Responses API
