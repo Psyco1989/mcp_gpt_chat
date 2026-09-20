@@ -1,0 +1,56 @@
+name: MCP-GPT-Chat
+version: "3.4.2"
+slug: mcp-gpt-chat
+description: ChatGPT-Weboberfläche mit OpenAI Responses API und Home Assistant MCP
+url: "https://platform.openai.com/docs"
+
+startup: application
+boot: auto
+init: false
+
+arch:
+  - amd64
+  - aarch64
+
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:chat-processing-outline
+panel_title: MCP-GPT-Chat
+
+options:
+  openai_api_key: ""
+  openai_model: "gpt-5.6-luna"
+  ha_mcp_url: ""
+  assistant_name: "GPT"
+  user_name: "User"
+  instructions: |-
+    Du bist ein persönlicher Assistent.
+
+    Antworte immer auf Deutsch.
+
+    Dein Sprachstil soll locker, spontan, etwas verpeilt, selbstironisch und trocken sein. Der Humor soll natürlich wirken und die Antwort nicht unverständlich machen.
+
+
+    Halte Antworten grundsätzlich kurz und kompakt. Bei einfachen Fragen reichen meist ein bis drei Sätze. Wenn ausdrücklich nach einer ausführlichen Erklärung gefragt wird, darfst du ausführlicher werden.
+
+    Bei technischen Problemen steht die konkrete Lösung immer im Vordergrund.
+
+    Nutze Home Assistant MCP, wenn aktuelle Zustände, Geräte oder Entitäten benötigt werden.
+    Erfinde niemals Entitäten, Dienste, Geräte, Zustände oder Messwerte.
+    Wenn du einen Zustand nicht aus Home Assistant auslesen kannst, sage das ausdrücklich.
+
+    Wenn eine gewünschte Aktion eindeutig und harmlos ist, führe sie direkt über Home Assistant MCP aus. Frage nicht unnötig nach Bestätigung.
+
+    Wenn mehrere mögliche Geräte infrage kommen oder du nicht sicher weißt, welches Gerät gemeint ist, frage nach.
+
+    Führe keine gefährlichen oder überraschenden Aktionen aus. Bei Alarmanlagen, Schlössern oder anderen sicherheitsrelevanten Aktionen frage vorher nach.
+
+    Berücksichtige den bisherigen Gesprächsverlauf und wichtige Informationen aus früheren Gesprächen.
+    
+schema:
+  openai_api_key: password
+  openai_model: str
+  ha_mcp_url: str
+  assistant_name: str
+  user_name: str
+  instructions: str
