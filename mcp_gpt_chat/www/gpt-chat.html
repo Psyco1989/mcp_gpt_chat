@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101114">
+  <title id="ph-page-title">MCP-GPT-Chat</title>
+  <style>
+    :root { color-scheme: dark; --ph-bg:#101114; --ph-panel:#1a1c21; --ph-panel-light:#20232b; --ph-border:#30343e; --ph-text:#f2f3f5; --ph-muted:#a8adb8; --ph-accent:#8b5cf6; --ph-accent-hover:#7c3aed; --ph-user:#30304a; --ph-homie:#22252c; --ph-error:#7f1d1d; --ph-recording:#dc2626; }
+    * { box-sizing:border-box; }
+    html { width:100%; min-height:100%; background:var(--ph-bg); }
+    body { display:flex!important; flex-direction:column!important; width:100%!important; min-width:0!important; min-height:100vh!important; margin:0!important; padding:0!important; background:var(--ph-bg)!important; color:var(--ph-text)!important; font-family:Arial,Helvetica,sans-serif!important; }
+    button,input,textarea { font:inherit; }
+    #ph-header { display:flex!important; align-items:center!important; justify-content:space-between!important; gap:12px!important; width:100%!important; min-height:66px!important; padding:16px 20px!important; background:var(--ph-panel)!important; border-bottom:1px solid var(--ph-border)!important; }
+    #ph-brand { display:flex!important; align-items:center!important; gap:12px!important; min-width:0!important; }
+
+    #ph-title { margin:0!important; color:var(--ph-text)!important; font-size:18px!important; font-weight:700!important; line-height:1.2!important; }
+    #ph-subtitle { margin-top:4px!important; color:var(--ph-muted)!important; font-size:12px!important; }
+    #ph-status { color:#86efac!important; font-size:12px!important; white-space:nowrap!important; }
+    #ph-chat { display:block!important; width:100%!important; max-width:1000px!important; min-width:0!important; margin:0 auto!important; padding:20px!important; background:transparent!important; flex:1 0 auto!important; }
+    #ph-welcome { display:block!important; width:100%!important; margin:0 0 20px 0!important; padding:20px!important; background:var(--ph-panel)!important; border:1px solid var(--ph-border)!important; border-radius:16px!important; }
+    #ph-welcome-name { margin:0 0 8px 0!important; color:var(--ph-text)!important; font-size:22px!important; font-weight:700!important; line-height:1.3!important; }
+    #ph-welcome-text { margin:0!important; color:var(--ph-muted)!important; font-size:14px!important; line-height:1.5!important; }
+    #ph-messages { display:flex!important; flex-direction:column!important; gap:14px!important; width:100%!important; }
+    .ph-chat-message { display:block!important; width:fit-content!important; max-width:85%!important; margin:0!important; padding:13px 16px!important; border:1px solid var(--ph-border)!important; border-radius:16px!important; color:var(--ph-text)!important; line-height:1.5!important; overflow-wrap:anywhere!important; white-space:pre-wrap!important; }
+    .ph-user-message { align-self:flex-end!important; background:var(--ph-user)!important; border-bottom-right-radius:5px!important; }
+    .ph-homie-message { align-self:flex-start!important; background:var(--ph-homie)!important; border-bottom-left-radius:5px!important; }
+    .ph-error-message { background:var(--ph-error)!important; }
+    .ph-message-label { display:block!important; margin-bottom:6px!important; color:var(--ph-muted)!important; font-size:11px!important; font-weight:700!important; letter-spacing:.5px!important; }
+    .ph-message-label-content {
+      display:flex!important;
+      align-items:center!important;
+      gap:6px!important;
+    }
+
+    .ph-message-text { font-size:16px!important; }
+    .ph-typing { color:var(--ph-muted)!important; font-style:italic!important; }
+    #ph-footer { display:block!important; width:100%!important; min-height:0!important; margin-top:auto!important; padding:14px!important; background:var(--ph-panel)!important; border-top:1px solid var(--ph-border)!important; position:sticky!important; bottom:0!important; z-index:20!important; }
+    #ph-form { display:flex!important; align-items:stretch!important; gap:8px!important; width:100%!important; max-width:1000px!important; margin:0 auto!important; }
+    #ph-input { display:block!important; flex:1 1 auto!important; width:100%!important; min-width:0!important; min-height:48px!important; max-height:180px!important; padding:13px 15px!important; resize:none!important; outline:none!important; background:var(--ph-bg)!important; color:var(--ph-text)!important; border:1px solid var(--ph-border)!important; border-radius:14px!important; font-size:16px!important; line-height:1.4!important; overflow-y:auto!important; }
+    #ph-input:focus { border-color:var(--ph-accent)!important; }
+    #ph-input::placeholder { color:var(--ph-muted)!important; }
+    #ph-mic,#ph-send { display:flex!important; align-items:center!important; justify-content:center!important; width:48px!important; height:48px!important; flex:0 0 48px!important; padding:0!important; border:0!important; border-radius:14px!important; color:white!important; cursor:pointer!important; font-size:21px!important; font-weight:bold!important; transition:background .2s ease!important; }
+    #ph-mic { background:#3f4450!important; }
+    #ph-mic:hover:not(:disabled) { background:#525866!important; }
+    #ph-mic.recording { background:var(--ph-recording)!important; animation:ph-pulse 1.2s infinite!important; }
+    #ph-send { background:var(--ph-accent)!important; }
+    #ph-send:hover:not(:disabled) { background:var(--ph-accent-hover)!important; }
+    #ph-mic:disabled,#ph-send:disabled { opacity:.5!important; cursor:not-allowed!important; }
+    #ph-hint { width:100%!important; max-width:1000px!important; min-height:18px!important; margin:8px auto 0 auto!important; padding:0 2px!important; color:var(--ph-muted)!important; font-size:11px!important; text-align:center!important; }
+    @keyframes ph-pulse { 0%{opacity:1;} 50%{opacity:.55;} 100%{opacity:1;} }
+    @media (max-width:600px) { #ph-header{padding:13px 14px!important;} #ph-chat{padding:14px!important;} #ph-welcome{padding:16px!important;border-radius:14px!important;} #ph-welcome-name{font-size:20px!important;} .ph-chat-message{max-width:92%!important;padding:13px 14px!important;} .ph-message-text{font-size:16px!important;} #ph-footer{padding:10px!important;} #ph-input{min-height:52px!important;font-size:16px!important;} #ph-mic,#ph-send{width:52px!important;height:52px!important;flex-basis:52px!important;} #ph-hint{font-size:11px!important;} }
+  </style>
+</head>
+<body>
+  <header id="ph-header">
+    <div id="ph-brand"><div><h1 id="ph-title">MCP-GPT-Chat</h1><div id="ph-subtitle">Dein persönlicher HA-Assist</div></div></div>
+    <div id="ph-status">● Online</div>
+  </header> 
+  <main id="ph-chat">  
+    <section id="ph-welcome">
+      <h2 id="ph-welcome-name">Hi 👋</h2>
+      <p id="ph-welcome-text"> </p>
+    </section>
+    <section id="ph-messages" aria-live="polite"></section>
+  </main>
+  <footer id="ph-footer">
+    <form id="ph-form">
+      <textarea id="ph-input" placeholder="Schreib GPT etwas..." autocomplete="off" spellcheck="true" rows="1"></textarea>
+      <button id="ph-mic" type="button" aria-label="Spracheingabe starten" title="Spracheingabe starten">🎙️</button>
+      <button id="ph-send" type="submit" aria-label="Nachricht senden" title="Nachricht senden">➤</button>
+    </form>
+    <div id="ph-hint">Enter zum Senden · Shift + Enter für eine neue Zeile</div>
+  </footer>
+  <script>
+    const chat = document.getElementById("ph-messages");
+    const form = document.getElementById("ph-form");
+    const input = document.getElementById("ph-input");
+    const send = document.getElementById("ph-send");
+    const mic = document.getElementById("ph-mic");
+    const status = document.getElementById("ph-status");
+    const hint = document.getElementById("ph-hint");
+    const messages = [];
+
+    let recognition = null;
+    let isListening = false;
+    let speechBaseText = "";
+    let speechFinalText = "";
+    let speechInterimText = "";
+    let speechSending = false;
+    let requestWasSpoken = false;
+    let speechSilenceTimer = null;
+
+    let assistantName = "GPT";
+    let userName = "User";
+
+    async function loadConfig() {
+      try {
+        const response = await fetch("./api/config", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          assistantName = data.assistant_name || "GPT";
+          userName = data.user_name || "User";
+
+          document.title = assistantName;
+
+          const title = document.getElementById("ph-title");
+          if (title) {
+            title.textContent = assistantName;
+          }
+
+          const welcomeName = document.getElementById("ph-welcome-name");
+          if (welcomeName) {
+            welcomeName.textContent = "Hi " + userName + " 👋";
+          }
+
+          const inputField = document.getElementById("ph-input");
+          if (inputField) {
+            inputField.placeholder = "Schreib " + assistantName + " etwas...";
+          }
+
+          
+        }
+      } catch (error) {
+        console.error("MCP-GPT-Chat Konfiguration:", error);
+      }
+    }
+
+    async function loadGreeting() {
+      const welcomeText =
+        document.getElementById("ph-welcome-text");
+
+      try {
+        const response =
+          await fetch("./api/greeting", {
+            method: "GET",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+        const data =
+          await response.json();
+
+        if (
+          response.ok &&
+          data.text
+        ) {
+          welcomeText.textContent =
+            data.text;
+        } else {
+          welcomeText.textContent =
+            "Hey, " + userName + ". Da ist irgendway kaputt!";
+        }
+
+      } catch (error) {
+        console.error(
+          assistantName + " Begrüßung:",
+          error
+        );
+
+        welcomeText.textContent =
+          "Hey, " + userName + ". Da ist irgendway kaputt!";
+      }
+    }
+    function scrollToBottom() {
+      const scroll = () => {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: "smooth"
+        });
+
+        document.documentElement.scrollTop =
+          document.documentElement.scrollHeight;
+
+        document.body.scrollTop =
+          document.body.scrollHeight;
+      };
+
+      scroll();
+
+      setTimeout(scroll, 200);
+      setTimeout(scroll, 500);
+      setTimeout(scroll, 1000);
+    }
+
+    function addMessage(role, text, isError = false) {
+      const message = document.createElement("div");
+
+      message.className =
+        "ph-chat-message " +
+        (role === "user"
+          ? "ph-user-message"
+          : "ph-homie-message");
+
+      if (isError) {
+        message.classList.add("ph-error-message");
+      }
+
+      const label = document.createElement("span");
+      label.className = "ph-message-label";
+
+      if (role === "assistant") {
+        const labelContent =
+          document.createElement("span");
+
+        labelContent.className =
+          "ph-message-label-content";
+
+        
+
+        const name =
+          document.createElement("span");
+
+        name.textContent =
+          assistantName;
+
+        
+        labelContent.appendChild(name);
+
+        label.appendChild(labelContent);
+
+      } else {
+        label.textContent = "Du";
+      }
+
+      const messageText = document.createElement("div");
+      messageText.className = "ph-message-text";
+      messageText.textContent = text;
+
+      message.appendChild(label);
+      message.appendChild(messageText);
+      chat.appendChild(message);
+
+      scrollToBottom();
+    }
+
+    function addTypingMessage() {
+      const message = document.createElement("div");
+
+      message.id = "ph-typing";
+      message.className =
+        "ph-chat-message ph-homie-message ph-typing";
+      message.textContent = assistantName + " denkt nach...";
+
+      chat.appendChild(message);
+      scrollToBottom();
+    }
+
+    function removeTypingMessage() {
+      const typing =
+        document.getElementById("ph-typing");
+
+      if (typing) {
+        typing.remove();
+      }
+    }
+
+    async function readJsonResponse(response) {
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await response.text();
+
+        throw new Error(
+          "Server hat keine JSON-Antwort geliefert: " +
+          text.slice(0, 300)
+        );
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          data.message ||
+          "HTTP-Fehler " + response.status
+        );
+      }
+
+      return data;
+    }
+
+    function clearSpeechSilenceTimer() {
+      if (speechSilenceTimer !== null) {
+        clearTimeout(speechSilenceTimer);
+        speechSilenceTimer = null;
+      }
+    }
+
+    function normalizeSpeechText(text) {
+      return text
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    /*
+     * Android Chrome kann denselben gesprochenen Abschnitt
+     * mehrfach als neues "final" Ergebnis liefern.
+     *
+     * Beispiel:
+     *
+     *   hallo
+     *   hallo was
+     *   hallo was geht
+     *
+     * Statt daraus
+     *
+     *   hallo hallo was hallo was geht
+     *
+     * zu machen, wird ein Ergebnis, das den bisherigen
+     * Text erweitert, als Aktualisierung behandelt.
+     */
+    function mergeFinalSpeechText(current, incoming) {
+      current = normalizeSpeechText(current);
+      incoming = normalizeSpeechText(incoming);
+
+      if (!incoming) {
+        return current;
+      }
+
+      if (!current) {
+        return incoming;
+      }
+
+      const currentLower =
+        current.toLowerCase();
+
+      const incomingLower =
+        incoming.toLowerCase();
+
+      // Neues Ergebnis ist eine Erweiterung des bisherigen.
+      if (
+        incomingLower.startsWith(
+          currentLower + " "
+        ) ||
+        incomingLower === currentLower
+      ) {
+        return incoming;
+      }
+
+      // Neues Ergebnis ist nur ein Teil des bisherigen.
+      if (
+        currentLower.startsWith(
+          incomingLower + " "
+        )
+      ) {
+        return current;
+      }
+
+      // Neues Ergebnis enthält den bisherigen Text.
+      if (
+        incomingLower.startsWith(
+          currentLower
+        )
+      ) {
+        return incoming;
+      }
+
+      // Bereits vollständig enthalten.
+      if (
+        currentLower.includes(
+          incomingLower
+        )
+      ) {
+        return current;
+      }
+
+      // Überlappung am Übergang entfernen.
+      const currentWords =
+        current.split(" ");
+
+      const incomingWords =
+        incoming.split(" ");
+
+      const maxOverlap =
+        Math.min(
+          currentWords.length,
+          incomingWords.length
+        );
+
+      for (
+        let overlap = maxOverlap;
+        overlap >= 1;
+        overlap--
+      ) {
+        const currentEnd =
+          currentWords
+            .slice(
+              currentWords.length - overlap
+            )
+            .join(" ")
+            .toLowerCase();
+
+        const incomingStart =
+          incomingWords
+            .slice(0, overlap)
+            .join(" ")
+            .toLowerCase();
+
+        if (
+          currentEnd ===
+          incomingStart
+        ) {
+          return normalizeSpeechText(
+            current +
+            " " +
+            incomingWords
+              .slice(overlap)
+              .join(" ")
+          );
+        }
+      }
+
+      return normalizeSpeechText(
+        current + " " + incoming
+      );
+    }
+
+    function getSpeechText() {
+      return normalizeSpeechText(
+        speechBaseText +
+        " " +
+        speechFinalText +
+        " " +
+        speechInterimText
+      );
+    }
+
+    function updateSpeechInput() {
+      if (speechSending) {
+        return;
+      }
+
+      input.value =
+        getSpeechText();
+
+      input.dispatchEvent(
+        new Event("input", {
+          bubbles: true
+        })
+      );
+    }
+
+    function startSpeechSilenceTimer() {
+      clearSpeechSilenceTimer();
+
+      speechSilenceTimer =
+        setTimeout(function() {
+          sendSpeechMessage();
+        }, 2000);
+    }
+
+    function sendSpeechMessage() {
+      if (speechSending) {
+        return;
+      }
+
+      const textToSend =
+        getSpeechText();
+
+      if (!textToSend) {
+        return;
+      }
+
+      speechSending = true;
+
+      clearSpeechSilenceTimer();
+
+      input.value =
+        textToSend;
+
+      input.dispatchEvent(
+        new Event("input", {
+          bubbles: true
+        })
+      );
+
+      isListening = false;
+
+      if (recognition) {
+        try {
+          recognition.abort();
+        } catch (error) {
+          console.error(
+            "Speech Recognition konnte nicht beendet werden:",
+            error
+          );
+        }
+      }
+
+      resetSpeechUi();
+
+      setTimeout(function() {
+        if (
+          speechSending &&
+          input.value.trim()
+        ) {
+          form.requestSubmit();
+        }
+      }, 100);
+    }
+
+    function resetSpeechUi() {
+      mic.classList.remove("recording");
+      mic.textContent = "🎙";
+      mic.title =
+        "Spracheingabe starten";
+
+      mic.setAttribute(
+        "aria-label",
+        "Spracheingabe starten"
+      );
+    }
+
+    function clearSpeechSilenceTimer() {
+      if (speechSilenceTimer !== null) {
+        clearInterval(speechSilenceTimer);
+        speechSilenceTimer = null;
+      }
+    }
+
+    function normalizeSpeechText(text) {
+      return text
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function mergeFinalSpeechText(current, incoming) {
+      current = normalizeSpeechText(current);
+      incoming = normalizeSpeechText(incoming);
+
+      if (!incoming) return current;
+      if (!current) return incoming;
+
+      const a = current.toLowerCase();
+      const b = incoming.toLowerCase();
+
+      if (b === a || b.startsWith(a + " ")) {
+        return incoming;
+      }
+
+      if (a.startsWith(b + " ")) {
+        return current;
+      }
+
+      if (a.includes(b)) {
+        return current;
+      }
+
+      const aw = current.split(" ");
+      const bw = incoming.split(" ");
+      const max = Math.min(aw.length, bw.length);
+
+      for (let n = max; n > 0; n--) {
+        if (
+          aw.slice(-n).join(" ").toLowerCase() ===
+          bw.slice(0, n).join(" ").toLowerCase()
+        ) {
+          return normalizeSpeechText(
+            current + " " + bw.slice(n).join(" ")
+          );
+        }
+      }
+
+      return normalizeSpeechText(
+        current + " " + incoming
+      );
+    }
+
+    function getSpeechText() {
+      return normalizeSpeechText(
+        speechBaseText +
+        " " +
+        speechFinalText +
+        " " +
+        speechInterimText
+      );
+    }
+
+    function startSpeechSilenceTimer() {
+      clearSpeechSilenceTimer();
+
+      speechSilenceTimer =
+        setInterval(function() {
+          if (
+            !isListening ||
+            speechSending
+          ) {
+            return;
+          }
+
+          if (
+            getSpeechText() &&
+            speechLastChangeAt &&
+            Date.now() - speechLastChangeAt >= 2000
+          ) {
+            clearSpeechSilenceTimer();
+            sendSpeechMessage();
+          }
+        }, 100);
+    }
+
+    function sendSpeechMessage() {
+      if (speechSending) {
+        return;
+      }
+
+      const text =
+        getSpeechText();
+
+      if (!text) {
+        return;
+      }
+
+      speechSending = true;
+      clearSpeechSilenceTimer();
+      isListening = false;
+
+      input.value = text;
+
+      input.dispatchEvent(
+        new Event("input", {
+          bubbles: true
+        })
+      );
+
+      if (recognition) {
+        try {
+          recognition.abort();
+        } catch (error) {
+          console.error(
+            "Speech Recognition konnte nicht beendet werden:",
+            error
+          );
+        }
+      }
+
+      resetSpeechUi();
+
+      setTimeout(function() {
+        if (
+          speechSending &&
+          input.value.trim()
+        ) {
+          form.requestSubmit();
+        }
+      }, 100);
+    }
+
+    function resetSpeechUi() {
+      mic.classList.remove("recording");
+      mic.textContent = "🎙";
+      mic.title =
+        "Spracheingabe starten";
+
+      mic.setAttribute(
+        "aria-label",
+        "Spracheingabe starten"
+      );
+    }
+
+    function stopSpeechOutput() {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function cleanTextForSpeech(text) {
+      return String(text || "")
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/[*_#>`]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function speakAnswer(text) {
+      if (
+        !requestWasSpoken ||
+        !text ||
+        !("speechSynthesis" in window)
+      ) {
+        return;
+      }
+
+      stopSpeechOutput();
+
+      const spokenText = cleanTextForSpeech(text);
+      if (!spokenText) return;
+
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      utterance.lang = "de-DE";
+      utterance.rate = 1.25;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function setupSpeechRecognition() {
+      const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        mic.disabled = true;
+        mic.title =
+          "Spracheingabe wird von diesem Browser nicht unterstützt";
+        hint.textContent =
+          "Spracheingabe wird von diesem Browser nicht unterstützt.";
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "de-DE";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = function() {
+        isListening = true;
+        speechSending = false;
+        speechFinalText = "";
+        speechInterimText = "";
+        speechBaseText = normalizeSpeechText(input.value);
+        speechLastDisplayedText = speechBaseText;
+        speechLastChangeAt = Date.now();
+
+        clearSpeechSilenceTimer();
+        startSpeechSilenceTimer();
+
+        mic.classList.add("recording");
+        mic.textContent = "🛑"
+        mic.title = "Spracheingabe stoppen";
+        mic.setAttribute(
+          "aria-label",
+          "Spracheingabe stoppen"
+        );
+
+        status.textContent = "● Hört zu...";
+        status.style.color = "#f87171";
+        hint.textContent = "Sprich jetzt...";
+      };
+
+      recognition.onresult = function(event) {
+        if (speechSending) {
+          return;
+        }
+
+        let finalText = speechFinalText;
+        let interimText = "";
+
+        for (
+          let i = event.resultIndex;
+          i < event.results.length;
+          i++
+        ) {
+          const result = event.results[i];
+
+          if (!result || !result[0]) {
+            continue;
+          }
+
+          const transcript =
+            normalizeSpeechText(
+              result[0].transcript
+            );
+
+          if (!transcript) {
+            continue;
+          }
+
+          if (result.isFinal) {
+            finalText =
+              mergeFinalSpeechText(
+                finalText,
+                transcript
+              );
+            interimText = "";
+          } else {
+            interimText = transcript;
+          }
+        }
+
+        speechFinalText =
+          normalizeSpeechText(finalText);
+
+        speechInterimText =
+          normalizeSpeechText(interimText);
+
+        const newText =
+          getSpeechText();
+
+        /*
+         * Der Timer wird NUR zurückgesetzt, wenn sich der
+         * tatsächlich angezeigte Text geändert hat.
+         */
+        if (
+          newText !== speechLastDisplayedText
+        ) {
+          speechLastDisplayedText = newText;
+          speechLastChangeAt = Date.now();
+        }
+
+        input.value = newText;
+
+        input.dispatchEvent(
+          new Event("input", {
+            bubbles: true
+          })
+        );
+      };
+
+      recognition.onerror = function(event) {
+        console.error(
+          "Speech Recognition Fehler:",
+          event.error
+        );
+
+        if (
+          event.error === "no-speech" ||
+          event.error === "aborted"
+        ) {
+          return;
+        }
+
+        isListening = false;
+        clearSpeechSilenceTimer();
+        resetSpeechUi();
+
+        status.textContent =
+          "● Spracheingabe fehlgeschlagen";
+        status.style.color = "#fca5a5";
+
+        hint.textContent =
+          "Spracheingabe konnte nicht gestartet werden.";
+      };
+
+      recognition.onend = function() {
+        if (
+          speechSending ||
+          !isListening
+        ) {
+          return;
+        }
+
+        setTimeout(function() {
+          if (
+            isListening &&
+            !speechSending
+          ) {
+            try {
+              recognition.start();
+            } catch (error) {
+              console.debug(
+                "Speech Recognition Neustart:",
+                error
+              );
+            }
+          }
+        }, 100);
+      };
+    }
+
+    function startSpeechRecognition() {
+      if (
+        !recognition ||
+        isListening ||
+        send.disabled
+      ) {
+        return;
+      }
+
+      stopSpeechOutput();
+      requestWasSpoken = true;
+      speechSending = false;
+      speechFinalText = "";
+      speechInterimText = "";
+      speechBaseText =
+        normalizeSpeechText(input.value);
+
+      speechLastDisplayedText =
+        speechBaseText;
+
+      speechLastChangeAt =
+        Date.now();
+
+      clearSpeechSilenceTimer();
+
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error(
+          "Speech Recognition Start:",
+          error
+        );
+      }
+    }
+
+    function stopSpeechRecognition() {
+      if (
+        !recognition ||
+        !isListening
+      ) {
+        return;
+      }
+
+      clearSpeechSilenceTimer();
+      isListening = false;
+
+      try {
+        recognition.stop();
+      } catch (error) {
+        console.error(
+          "Speech Recognition Stop:",
+          error
+        );
+      }
+
+      resetSpeechUi();
+
+      status.textContent = "● Online";
+      status.style.color = "#86efac";
+      hint.textContent =
+        "Tippe eine Nachricht oder sprich.";
+    }
+
+    mic.addEventListener("click", function() {
+      if (isListening) {
+        stopSpeechRecognition();
+      } else {
+        startSpeechRecognition();
+      }
+    });
+    send.addEventListener(
+      "mousedown",
+      function(event) {
+        event.preventDefault();
+        input.focus();
+      }
+    );
+    form.addEventListener(
+      "submit",
+      async function(event) {
+        event.preventDefault();
+
+        if (isListening) {
+          clearSpeechSilenceTimer();
+          isListening = false;
+
+          try {
+            recognition.abort();
+          } catch (error) {
+            console.error(
+              "Speech Recognition Abort:",
+              error
+            );
+          }
+
+          resetSpeechUi();
+        }
+
+        const text =
+          input.value.trim();
+        
+
+        if (
+          !text ||
+          send.disabled
+        ) {
+          return;
+        }
+
+        clearSpeechSilenceTimer();
+        
+
+        input.value = "";
+        input.style.height = "48px";
+
+        send.disabled = true;
+        mic.disabled = true;
+
+        status.textContent = "● Denkt nach...";
+        status.style.color = "#facc15";
+        hint.textContent =
+          assistantName + " denkt nach...";
+
+        messages.push({
+          role: "user",
+          content: text
+        });
+
+        addMessage(
+          "user",
+          text
+        );
+
+        addTypingMessage();
+
+        try {
+          const response =
+            await fetch(
+              "./api/chat",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                  "Accept":
+                    "application/json"
+                },
+                body:
+                  JSON.stringify({
+                    messages:
+                      messages
+                  })
+              }
+            );
+
+          const data =
+            await readJsonResponse(
+              response
+            );
+
+          removeTypingMessage();
+
+          const answer =
+            data.text ||
+            data.response ||
+            data.answer ||
+            "Keine Antwort erhalten.";
+
+          messages.push({
+            role: "assistant",
+            content: answer
+          });
+
+          addMessage(
+            "assistant",
+            answer
+          );
+          
+
+          speakAnswer(answer);
+
+          status.textContent =
+            "● Online";
+          status.style.color =
+            "#86efac";
+
+          hint.textContent =
+            "Tippe eine Nachricht oder sprich.";
+          
+        } catch (error) {
+          removeTypingMessage();
+
+          addMessage(
+            "assistant",
+            "Fehler: " +
+              error.message,
+            true
+          );
+
+          status.textContent =
+            "● Anfrage fehlgeschlagen";
+          status.style.color =
+            "#fca5a5";
+
+          hint.textContent =
+            "Die Anfrage ist fehlgeschlagen.";
+
+          console.error(
+            assistantName + " Fehler:",
+            error
+          );
+        } finally {
+          send.disabled = false;
+          mic.disabled = false;
+
+          speechSending = false;
+          
+          speechFinalText = "";
+          speechInterimText = "";
+          speechBaseText = "";
+          speechLastDisplayedText = "";
+          speechLastChangeAt = 0;
+
+          clearSpeechSilenceTimer();
+          
+          
+          if (!requestWasSpoken) {
+  
+            input.focus();
+            setTimeout(() => {input.focus(); scrollToBottom();}, 150);
+
+            
+            
+          }
+          else {
+            scrollToBottom()
+            setTimeout(() => {scrollToBottom();}, 150);
+
+            
+              
+          }
+          requestWasSpoken = false;
+        }
+      }
+    );
+    
+    input.addEventListener(
+      "keydown",
+      function(event) {
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+          event.preventDefault();
+
+          if (!send.disabled) {
+            form.requestSubmit();
+          }
+        }
+      }
+    );
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        "resize",
+        function() {
+          setTimeout(() => {
+            scrollToBottom();
+          }, 150);
+
+          
+        }
+      );
+    }
+
+    async function initializeApp() {
+      await loadConfig();
+      await loadGreeting();
+      setupSpeechRecognition();
+      input.focus();
+    }
+
+    initializeApp();
+  </script>
+</body>
+</html>
