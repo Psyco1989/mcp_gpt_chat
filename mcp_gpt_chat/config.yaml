@@ -1,7 +1,7 @@
 name: MCP-AI-Chat
 version: "1.0.2"
 slug: mcp-gpt-chat
-description: AI-Weboberfläche mit OpenAI Responses API oder Anthropic Message API und Home Assistant MCP
+description: AI-Weboberfläche mit OpenAI Responses API oder Anthropic Messages API und Home Assistant MCP
 url: "https://github.com/Psyco1989/mcp_gpt_chat"
 
 startup: application
