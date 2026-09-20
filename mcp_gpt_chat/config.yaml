@@ -21,7 +21,7 @@ options:
   openai_api_key: ""
   openai_model: "gpt-5.6-luna"
   ha_mcp_url: ""
-  assistant_name: "GPT"
+  assistant_name: "Assist"
   user_name: "User"
   instructions: |-
     Du bist ein persönlicher Assistent.
