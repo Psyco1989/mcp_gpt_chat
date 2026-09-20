@@ -1,7 +1,7 @@
 name: MCP-AI-Chat
-version: "1.0.1"
+version: "1.0.2"
 slug: mcp-gpt-chat
-description: ChatGPT-Weboberfläche mit OpenAI Responses API und Home Assistant MCP
+description: AI-Weboberfläche mit OpenAI Responses API oder Anthropic Message API und Home Assistant MCP
 url: "https://github.com/Psyco1989/mcp_gpt_chat"
 
 startup: application
@@ -18,8 +18,11 @@ panel_icon: mdi:chat-processing-outline
 panel_title: MCP-AI-Chat
 
 options:
+  provider: "openai"
   openai_api_key: ""
   openai_model: "gpt-5.6-luna"
+  anthropic_api_key: ""
+  anthropic_model: "claude-sonnet-4-5"
   ha_mcp_url: ""
   assistant_name: "Assist"
   user_name: "User"
@@ -48,8 +51,20 @@ options:
     Berücksichtige den bisherigen Gesprächsverlauf und wichtige Informationen aus früheren Gesprächen.
     
 schema:
+  provider:
+    selector:
+      select:
+        options:
+          - label: OpenAI
+            value: openai
+          - label: Anthropic / Claude
+            value: anthropic
+
   openai_api_key: password
   openai_model: str
+
+  anthropic_api_key: password
+  anthropic_model: str
   ha_mcp_url: str
   assistant_name: str
   user_name: str
