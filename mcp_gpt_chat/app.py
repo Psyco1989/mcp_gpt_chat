@@ -773,7 +773,8 @@ def chat_openai(options, latest_user_message):
         kwargs["tools"] = tools
 
     try:
-        for _ in range(8):
+        max_tool_rounds = 8
+        for round_index in range(max_tool_rounds):
             response = client.responses.create(**kwargs)
             calls = []
             for item in getattr(response, "output", None) or []:
@@ -809,7 +810,24 @@ def chat_openai(options, latest_user_message):
 
             kwargs["input"] = tool_outputs
 
-        raise ChatError("Die Tool-Ausführung hat zu viele Schleifen benötigt.", "mcp", 502)
+            # Auch nach der letzten erlaubten Tool-Runde müssen die erzeugten
+            # Tool-Ergebnisse noch an OpenAI übergeben werden. Andernfalls
+            # bleibt der letzte function_call in der Conversation offen und
+            # die nächste Anfrage endet mit "No tool output found ...".
+            if round_index == max_tool_rounds - 1:
+                final_kwargs = dict(kwargs)
+                final_kwargs["tool_choice"] = "none"
+                response = client.responses.create(**final_kwargs)
+                if any(
+                    getattr(item, "type", None) == "function_call"
+                    for item in getattr(response, "output", None) or []
+                ):
+                    raise ChatError("Die Tool-Ausführung hat zu viele Schleifen benötigt.", "mcp", 502)
+                text = assistant_text_from_openai(response)
+                if not text:
+                    raise ChatError("OpenAI hat keine Textantwort geliefert.", "provider", 502, True)
+                return text, getattr(response, "id", None), conversation_id
+
     except ChatError:
         raise
     except Exception as error:
