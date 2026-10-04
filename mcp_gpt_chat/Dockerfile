@@ -1,14 +1,13 @@
 FROM python:3.12-slim
 
 LABEL \
-    io.hass.version="1.0.5" \
+    io.hass.version="2.0.2" \
     io.hass.type="app" \
     io.hass.arch="aarch64|amd64"
 
 WORKDIR /app
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .

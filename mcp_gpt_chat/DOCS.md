@@ -1,278 +1,159 @@
-# MCP-AI-Chat — Documentation
+# MCP-AI-Chat 2.0.2 – Dokumentation
 
-## Oberfläche
-
-![MCP-AI-Chat Oberfläche](https://raw.githubusercontent.com/Psyco1989/mcp_gpt_chat/refs/heads/main/Screenshot.png)
-
-
-## Installation
-
-Install **MCP-AI-Chat** through a Home Assistant app repository or build it locally for development.
-
-After installation, open the app configuration and set the options required for the selected AI provider:
-
-1. AI provider
-2. API key for the selected provider
-3. AI model
-4. Home Assistant MCP URL
-5. Assistant name
-6. User name
-7. Instruction prompt
-
-Save the configuration and restart the app.
-
-## AI Providers
-
-The app supports:
-
-- OpenAI
-- Anthropic / Claude
-
-The provider can be selected directly in the Home Assistant app configuration.
-
-Each provider has its own API key and model configuration.
-
-## OpenAI Conversation State
-
-OpenAI uses the Responses API together with the OpenAI Conversations API.
-
-The app does not store the complete OpenAI conversation locally. Instead, it stores only the OpenAI `conversation_id` in:
+## Architektur
 
 ```text
+Browser
+   ↓
+Flask /api/chat
+   ↓
+Provider-Auswahl
+   ├── OpenAI Responses API
+   ├── Anthropic Messages API
+   └── Kilo Gateway Chat Completions
+   ↓
+gemeinsamer MCP-Client
+   ↓
+Home Assistant MCP /api/mcp
+```
+
+Der Verlauf wird serverseitig unter `/data/conversation.json` verwaltet. OpenAI verwendet zusätzlich eine OpenAI Conversation-ID. Claude und Kilo verwenden den lokalen Verlauf.
+
+## API-Endpunkte
+
+### `GET /api/config`
+
+Liefert nur die für die Oberfläche benötigte Konfiguration:
+
+- Provider
+- Providername
+- Modell
+- Assistentenname
+- Benutzername
+- MCP-Status
+- Websuche-Status
+- Begrüßungsmodus
+- Verlaufslimit
+
+Es werden keine Secrets ausgeliefert.
+
+### `GET /api/history`
+
+Liefert den lokalen Verlauf des aktuell konfigurierten Providers.
+
+### `POST /api/chat`
+
+Neue Anfrage. Aktuelles Format:
+
+```json
+{
+  "message": "Schalte das Wohnzimmerlicht ein."
+}
+```
+
+Das alte Frontend-Format mit `messages` wird als Rückwärtskompatibilität ebenfalls akzeptiert, intern wird aber nur die letzte Benutzernachricht verwendet.
+
+### `POST /api/reset`
+
+Löscht den Verlauf des aktuell ausgewählten Providers. Bei OpenAI wird zusätzlich die lokale Conversation-ID entfernt.
+
+### `GET /api/greeting`
+
+Erzeugt abhängig von `greeting_mode` eine lokale oder KI-generierte Begrüßung.
+
+### `GET /health`
+
+Basisinformationen zum Laufzeitstatus.
+
+## MCP-Protokoll
+
+Der integrierte MCP-Client verwendet Streamable HTTP und den Legacy-/Session-Pfad des aktuellen MCP-Protokolls. Er führt aus:
+
+```text
+initialize
+notifications/initialized
+tools/list
+tools/call
+```
+
+Der Home-Assistant-MCP-Endpunkt ist `/api/mcp`; Home Assistant verlangt eine Authentifizierung. ([Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/); [HA LLM API](https://developers.home-assistant.io/docs/core/llm/))
+
+## OpenAI Tool Loop
+
+OpenAI Responses kann Function Tools zurückgeben. Das Add-on:
+
+1. sendet die User-Nachricht
+2. liest `function_call`-Items
+3. führt die jeweiligen MCP-Tools aus
+4. sendet `function_call_output` zurück
+5. wiederholt dies bis zur Textantwort oder bis zum internen Schleifenlimit
+
+OpenAI dokumentiert Responses + Conversations sowie das explizite Management von Tool-Schleifen. ([OpenAI Responses API](https://platform.openai.com/docs/guides/migrate-to-responses))
+
+## Claude Tool Loop
+
+Claude kann `tool_use`-Blöcke liefern. Das Add-on:
+
+1. sendet Verlauf + aktuelle User-Nachricht
+2. liest `tool_use`
+3. ruft MCP auf
+4. hängt `tool_result` an den Request an
+5. wiederholt bis zur finalen Textantwort oder zum Schleifenlimit
+
+## Kilo Tool Loop
+
+Kilo verwendet die OpenAI-kompatible Chat-Completions-Schnittstelle. Das Add-on wandelt MCP-Tools in normale Function Tools um und verarbeitet anschließend `tool_calls` und `tool`-Ergebnisnachrichten.
+
+Kilo dokumentiert Chat Completions und Tool Calling direkt für sein Gateway. ([Kilo API Reference](https://kilo.ai/docs/gateway/api-reference); [Kilo SDKs](https://kilo.ai/docs/gateway/sdks-and-frameworks))
+
+## Dateiablage
+
+```text
+/data/options.json
 /data/conversation.json
 ```
 
-The actual conversation state is managed by OpenAI.
+Die Conversation-Datei wird über eine temporäre Datei und anschließendes `replace()` atomar geschrieben.
 
-This allows the conversation to persist across app requests and restarts without maintaining a separate local message database.
-
-## Anthropic / Claude Conversation State
-
-Claude uses the Anthropic Messages API.
-
-Because the Messages API does not use the same OpenAI-style persistent `conversation_id`, the app stores the Claude message history locally in:
+## Gesprächslimit
 
 ```text
-/data/conversation.json
+HISTORY_LIMIT = 100
 ```
 
-The OpenAI and Claude conversation states are stored separately.
+Es werden nur `user`- und `assistant`-Nachrichten dauerhaft gespeichert. Tool-Aufrufe bleiben Teil des laufenden Provider-Requests beziehungsweise der OpenAI-Conversation, aber nicht Teil des einfachen lokalen UI-Verlaufs.
 
-Switching the provider therefore does not overwrite the conversation state of the other provider.
+## Sicherheit
 
-## Assistant Identity
+Secrets werden weder durch `/api/config` noch durch `/health` ausgegeben.
 
-`assistant_name` controls the assistant name displayed in the user interface and supplied to the model.
+MCP-URLs werden in Logs nur ohne Query-Parameter protokolliert.
 
-`user_name` controls the user's name supplied to the model.
+Der Benutzer sollte keine echten Credentials in Git committen.
 
-`instructions` is the base instruction prompt sent with chat requests. It can be customized completely.
+## Sprachsteuerung
 
-The instruction prompt can define language, tone, behavior, Home Assistant rules and other requirements for the assistant.
-
-## Home Assistant MCP
-
-The configured MCP endpoint must be reachable by the application and must expose the Home Assistant functionality the assistant is allowed to use.
-
-The permissions available to the assistant depend on the MCP server configuration.
-
-Only expose the Home Assistant functionality that is actually required.
-
-For actions such as controlling devices, make sure the MCP permissions are configured appropriately.
-
-## Voice Input
-
-Voice input uses the browser's Web Speech API when supported.
-
-Voice-originated requests can be answered using browser text-to-speech.
-
-Support depends on the browser or WebView being used. Some embedded Android WebViews may not expose all speech APIs.
-
-If voice input does not work, test the application in a current browser such as Chrome.
-
-## Configuration
-
-The main configuration options are:
-
-| Option | Description |
-|---|---|
-| `provider` | Selected AI provider |
-| `openai_api_key` | OpenAI API key |
-| `openai_model` | OpenAI model |
-| `anthropic_api_key` | Anthropic API key |
-| `anthropic_model` | Anthropic / Claude model |
-| `ha_mcp_url` | Home Assistant MCP endpoint |
-| `assistant_name` | Assistant display name |
-| `user_name` | User name |
-| `instructions` | Base instruction prompt |
-
-All options defined under `options:` in `config.yaml` should also have a corresponding entry under `schema:`.
-
-## Troubleshooting
-
-### Configuration resets or options are missing
-
-Check `config.yaml`.
-
-Every option defined under:
-
-```yaml
-options:
-```
-
-should have a matching entry under:
-
-```yaml
-schema:
-```
-
-Also verify that the YAML syntax is valid.
-
-### MCP connection problems
-
-Verify:
-
-- The `ha_mcp_url` is correct.
-- The MCP endpoint is reachable from the Home Assistant environment.
-- The MCP endpoint is valid and available.
-- The MCP server exposes the required Home Assistant functionality.
-- The MCP server permissions allow the requested operation.
-
-For Anthropic / Claude, the MCP endpoint must also be reachable by Anthropic's MCP connector.
-
-### OpenAI errors
-
-Verify:
-
-- The OpenAI API key is valid.
-- The selected model is available to the configured OpenAI account.
-- The Home Assistant host has internet access.
-- The OpenAI API is reachable.
-- The configured model name is correct.
-
-### Anthropic / Claude errors
-
-Verify:
-
-- The Anthropic API key is valid.
-- The selected Claude model is available to the configured Anthropic account.
-- The Home Assistant host has internet access.
-- The Anthropic API is reachable.
-- The configured model name is correct.
-- The MCP endpoint is reachable by Anthropic's MCP connector when MCP functionality is used.
-
-### Conversation problems
-
-For OpenAI, check that `/data/conversation.json` contains a valid `conversation_id`.
-
-For Claude, check that the local conversation data is present in `/data/conversation.json`.
-
-Do not publish the contents of this file because it may contain private conversation data.
-
-If necessary, the conversation state can be reset by removing the stored conversation data and restarting the app. This starts a new conversation state for the affected provider.
-
-## Health Endpoint
-
-The application provides a health endpoint:
+Die HTML-Oberfläche verwendet:
 
 ```text
-/health
+SpeechRecognition / webkitSpeechRecognition
+speechSynthesis
 ```
 
-It reports basic application status such as:
+Die erkannte Sprache ist `de-DE`. Nach ungefähr zwei Sekunden unverändertem Transkript wird die Anfrage automatisch abgesendet.
 
-- Selected provider
-- API configuration status
-- MCP configuration status
-- Selected model
-- Assistant and user names
-- Conversation state information
+## Deployment
 
-The endpoint should not be treated as a replacement for checking the actual Home Assistant or provider logs.
+Start über Gunicorn:
 
-## Security
+```bash
+./run.sh
+```
 
-Never include real credentials in:
-
-- GitHub issues
-- Screenshots
-- Source code
-- Git commits
-- Public documentation
-- Public logs
-
-Do not publish:
-
-- OpenAI API keys
-- Anthropic API keys
-- Access tokens
-- MCP URLs containing secrets
-- Conversation IDs
-- `/data/conversation.json`
-- Home Assistant configuration files
-- Backups containing credentials
-
-If an API key or token is accidentally exposed, revoke it and create a new one.
-
-Because the application can use Home Assistant MCP to perform actions, carefully review the permissions provided by the MCP server.
-
-## Updates
-
-The app slug should remain unchanged when publishing updates:
+Der App-Port ist:
 
 ```text
-mcp-gpt-chat
+8099
 ```
 
-The displayed application name can be changed independently.
-
-When releasing a new version, increase the `version` value in `config.yaml`.
-
-Home Assistant can then detect the new version when the repository metadata and app version have been updated correctly.
-
-## Development
-
-The application consists of a Flask web application served through Gunicorn.
-
-The main components are:
-
-```text
-config.yaml
-Dockerfile
-run.sh
-app.py
-requirements.txt
-www/
-```
-
-The web interface is located in:
-
-```text
-www/gpt-chat.html
-```
-
-Application data is stored under:
-
-```text
-/data/
-```
-
-The Docker image supports:
-
-- `amd64`
-- `aarch64`
-
-## Privacy and Costs
-
-When OpenAI is selected, requests are sent to the configured OpenAI API.
-
-When Anthropic / Claude is selected, requests are sent to the configured Anthropic API.
-
-API usage may incur costs according to the respective provider's current pricing and account settings.
-
-OpenAI conversation state is managed by OpenAI.
-
-Claude conversation history is stored locally by the application.
-
-The application does not require a separate third-party database.
-
+Der Container wird für `amd64` und `aarch64` gebaut.
